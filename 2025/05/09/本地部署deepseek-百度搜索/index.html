@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"wendyluo1127.github.io","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
+  </script>
+
+  <meta name="description" content="完成本地部署deepseek、联网搜索，以及页面交互功能具体分为以下三步：使用Ollama部署本地deepseek使用requests和beautifulsoup实现爬取网络检索内容使用streamlit创建交互界面">
+<meta property="og:type" content="article">
+<meta property="og:title" content="本地部署deepseek+百度搜索">
+<meta property="og:url" content="https://wendyluo1127.github.io/2025/05/09/%E6%9C%AC%E5%9C%B0%E9%83%A8%E7%BD%B2deepseek-%E7%99%BE%E5%BA%A6%E6%90%9C%E7%B4%A2/index.html">
+<meta property="og:site_name" content="Wendy&#39;s Blog">
+<meta property="og:description" content="完成本地部署deepseek、联网搜索，以及页面交互功能具体分为以下三步：使用Ollama部署本地deepseek使用requests和beautifulsoup实现爬取网络检索内容使用streamlit创建交互界面">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2025-05-09T06:54:46.000Z">
+<meta property="article:modified_time" content="2025-05-09T08:56:17.141Z">
+<meta property="article:author" content="WendyLuo">
+<meta property="article:tag" content="computer">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://wendyluo1127.github.io/2025/05/09/%E6%9C%AC%E5%9C%B0%E9%83%A8%E7%BD%B2deepseek-%E7%99%BE%E5%BA%A6%E6%90%9C%E7%B4%A2/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>本地部署deepseek+百度搜索 | Wendy's Blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Wendy's Blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">welcome!</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+  <a href="https://github.com/WendyLuo1127" class="github-corner" title="Follow me on GitHub" aria-label="Follow me on GitHub" rel="noopener" target="_blank"><svg width="80" height="80" viewBox="0 0 250 250" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://wendyluo1127.github.io/2025/05/09/%E6%9C%AC%E5%9C%B0%E9%83%A8%E7%BD%B2deepseek-%E7%99%BE%E5%BA%A6%E6%90%9C%E7%B4%A2/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/my_avatar.jpg">
+      <meta itemprop="name" content="WendyLuo">
+      <meta itemprop="description" content="欢迎来到小菠萝的博客">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Wendy's Blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          本地部署deepseek+百度搜索
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2025-05-09 14:54:46 / 修改时间：16:56:17" itemprop="dateCreated datePublished" datetime="2025-05-09T14:54:46+08:00">2025-05-09</time>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span><br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>7.8k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>7 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="完成本地部署deepseek、联网搜索，以及页面交互功能"><a href="#完成本地部署deepseek、联网搜索，以及页面交互功能" class="headerlink" title="完成本地部署deepseek、联网搜索，以及页面交互功能"></a>完成本地部署deepseek、联网搜索，以及页面交互功能</h1><p>具体分为以下三步：<br><strong>使用Ollama部署本地deepseek</strong><br><strong>使用requests和beautifulsoup实现爬取网络检索内容</strong><br><strong>使用streamlit创建交互界面</strong></p>
+<span id="more"></span>
+<h2 id="Ollama部署本地deepseek"><a href="#Ollama部署本地deepseek" class="headerlink" title="Ollama部署本地deepseek"></a>Ollama部署本地deepseek</h2><ol>
+<li>下载Ollama  <ul>
+<li>建议不要下载到C盘，在CMD窗口输入：OllamaSetup.exe &#x2F;DIR&#x3D;你自己的路径  </li>
+<li>在高级系统设置的环境变量，新建一个环境变量 OLLAMA_MODELS ：刚刚ollama的路径&#x2F;models  </li>
+<li>在用户变量中新建变量名为OLLAMA_MODELS，变量值为：刚刚ollama的路径&#x2F;models  </li>
+<li>然后打开Ollama官网搜索deepseek，选择你想要的模型版本对应的的指令，在cmd中输入然后等待安装即可</li>
+</ul>
+</li>
+</ol>
+<h2 id="requests和beautifulsoup实现爬取网络检索内容"><a href="#requests和beautifulsoup实现爬取网络检索内容" class="headerlink" title="requests和beautifulsoup实现爬取网络检索内容"></a>requests和beautifulsoup实现爬取网络检索内容</h2><p>requests发送请求，beautifulsoup解析网页结构，最后保存输出</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> requests</span><br><span class="line"><span class="keyword">from</span> bs4 <span class="keyword">import</span> BeautifulSoup</span><br><span class="line"><span class="keyword">import</span> time</span><br><span class="line"><span class="keyword">import</span> os</span><br><span class="line"><span class="keyword">import</span> random</span><br><span class="line"><span class="keyword">import</span> json  <span class="comment"># 新增JSON模块导入</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">baidu_search</span>(<span class="params">keyword, page_num=<span class="number">3</span></span>):  <span class="comment"># 默认爬取 3 页</span></span><br><span class="line">    user_agents = [</span><br><span class="line">        <span class="string">&quot;Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36&quot;</span>,</span><br><span class="line">        <span class="string">&quot;Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36&quot;</span>,</span><br><span class="line">        <span class="string">&quot;Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36&quot;</span>,</span><br><span class="line">    ]</span><br><span class="line"></span><br><span class="line">    headers = &#123;</span><br><span class="line">        <span class="string">&quot;User-Agent&quot;</span>: random.choice(user_agents),</span><br><span class="line">        <span class="string">&quot;Accept-Language&quot;</span>: <span class="string">&quot;zh-CN,zh;q=0.9&quot;</span>,</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    results = []</span><br><span class="line">    added_links = <span class="built_in">set</span>()  <span class="comment"># 用于存储已添加结果的链接</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> page <span class="keyword">in</span> <span class="built_in">range</span>(page_num):</span><br><span class="line">        pn = page * <span class="number">10</span>  <span class="comment"># 计算 pn 参数的值</span></span><br><span class="line">        search_url = <span class="string">f&quot;https://www.baidu.com/s?wd=<span class="subst">&#123;requests.utils.quote(keyword)&#125;</span>&amp;pn=<span class="subst">&#123;pn&#125;</span>&quot;</span></span><br><span class="line">        <span class="built_in">print</span>(search_url)</span><br><span class="line"></span><br><span class="line">        <span class="keyword">try</span>:</span><br><span class="line">            response = requests.get(search_url, headers=headers, timeout=<span class="number">10</span>)</span><br><span class="line">            response.raise_for_status()</span><br><span class="line">            <span class="built_in">print</span>(<span class="string">f&quot;第 <span class="subst">&#123;page+<span class="number">1</span>&#125;</span> 页请求成功，状态码：<span class="subst">&#123;response.status_code&#125;</span>&quot;</span>) </span><br><span class="line">            response.encoding = response.apparent_encoding</span><br><span class="line"></span><br><span class="line">            soup = BeautifulSoup(response.text, <span class="string">&#x27;html.parser&#x27;</span>)</span><br><span class="line"></span><br><span class="line">            <span class="comment"># 定位搜索结果容器</span></span><br><span class="line">            containers = soup.find_all(<span class="string">&#x27;div&#x27;</span>, class_=<span class="string">&#x27;c-container&#x27;</span>)</span><br><span class="line"></span><br><span class="line">            <span class="keyword">for</span> container <span class="keyword">in</span> containers:</span><br><span class="line">                <span class="comment"># 提取标题和链接</span></span><br><span class="line">                title_tag = container.find(<span class="string">&#x27;h3&#x27;</span>, class_=<span class="string">&#x27;t&#x27;</span>)</span><br><span class="line">                <span class="keyword">if</span> <span class="keyword">not</span> title_tag <span class="keyword">or</span> <span class="keyword">not</span> title_tag.a:</span><br><span class="line">                    <span class="keyword">continue</span></span><br><span class="line"></span><br><span class="line">                title = title_tag.get_text(strip=<span class="literal">True</span>)</span><br><span class="line">                link = title_tag.a[<span class="string">&#x27;href&#x27;</span>]</span><br><span class="line"></span><br><span class="line">                <span class="comment"># 检查链接是否已存在</span></span><br><span class="line">                <span class="keyword">if</span> link <span class="keyword">in</span> added_links:</span><br><span class="line">                    <span class="keyword">continue</span></span><br><span class="line"></span><br><span class="line">                <span class="comment"># 提取摘要（兼容新旧版页面结构）</span></span><br><span class="line">                abstract = <span class="string">&quot;&quot;</span></span><br><span class="line">                abstract_tag = container.find(<span class="string">&#x27;div&#x27;</span>, class_=<span class="string">&#x27;c-abstract&#x27;</span>) <span class="keyword">or</span> \</span><br><span class="line">                               container.find(<span class="string">&#x27;div&#x27;</span>, class_=<span class="string">&#x27;content-right_8Zs40&#x27;</span>) <span class="keyword">or</span> \</span><br><span class="line">                               container.find(<span class="string">&#x27;span&#x27;</span>, class_=<span class="string">&#x27;c-font-normal&#x27;</span>) <span class="keyword">or</span> \</span><br><span class="line">                               container.find(<span class="string">&#x27;span&#x27;</span>, class_=<span class="string">&#x27;content-right_2s-H4&#x27;</span>) <span class="keyword">or</span> \</span><br><span class="line">                               container.find(<span class="string">&#x27;div&#x27;</span>, class_=<span class="string">&#x27;c-span-last&#x27;</span>) <span class="keyword">or</span> \</span><br><span class="line">                               container.find(<span class="string">&#x27;span&#x27;</span>, class_=<span class="string">&#x27;content-right_1THTn&#x27;</span>) <span class="keyword">or</span> \</span><br><span class="line">                               container.find(<span class="string">&#x27;div&#x27;</span>, class_=<span class="string">&#x27;right-link_NlGkt&#x27;</span>)</span><br><span class="line"></span><br><span class="line">                <span class="keyword">if</span> abstract_tag:</span><br><span class="line">                    abstract = abstract_tag.get_text(strip=<span class="literal">True</span>).replace(<span class="string">&#x27;\n&#x27;</span>, <span class="string">&#x27; &#x27;</span>)</span><br><span class="line"></span><br><span class="line">                results.append(&#123;</span><br><span class="line">                    <span class="string">&#x27;title&#x27;</span>: title,</span><br><span class="line">                    <span class="comment">#&#x27;link&#x27;: link,</span></span><br><span class="line">                    <span class="string">&#x27;abstract&#x27;</span>: abstract <span class="keyword">if</span> abstract <span class="keyword">else</span> <span class="string">&quot;暂无摘要信息&quot;</span></span><br><span class="line">                &#125;)</span><br><span class="line">                added_links.add(link)  <span class="comment"># 将链接添加到已添加集合中</span></span><br><span class="line"></span><br><span class="line">                <span class="keyword">if</span> <span class="built_in">len</span>(results) &gt;= <span class="number">10</span> * page_num:  <span class="comment"># 限制结果数量防止触发反爬</span></span><br><span class="line">                    <span class="keyword">break</span></span><br><span class="line">                time.sleep(random.uniform(<span class="number">1</span>, <span class="number">3</span>))  <span class="comment"># 每次请求后延迟 2 秒</span></span><br><span class="line"></span><br><span class="line">        <span class="keyword">except</span> Exception <span class="keyword">as</span> e:</span><br><span class="line">            <span class="built_in">print</span>(<span class="string">f&quot;第 <span class="subst">&#123;page + <span class="number">1</span>&#125;</span> 页请求异常：<span class="subst">&#123;<span class="built_in">str</span>(e)&#125;</span>&quot;</span>)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> results</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">save_results_to_file</span>(<span class="params">results, keyword</span>):  <span class="comment"># 函数名可保留，功能改为保存JSON</span></span><br><span class="line">    filename = os.path.join(os.getcwd(), <span class="string">f&quot;<span class="subst">&#123;keyword&#125;</span>_search_results.json&quot;</span>)  <span class="comment"># 改为JSON扩展名</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">with</span> <span class="built_in">open</span>(filename, <span class="string">&#x27;w&#x27;</span>, encoding=<span class="string">&#x27;utf-8&#x27;</span>) <span class="keyword">as</span> f:</span><br><span class="line">        <span class="comment"># 使用json.dump保存数据，设置ensure_ascii=False保证中文正常显示，indent=2增加可读性</span></span><br><span class="line">        json.dump(&#123;</span><br><span class="line">            <span class="string">&quot;keyword&quot;</span>: keyword,</span><br><span class="line">            <span class="string">&quot;total&quot;</span>: <span class="built_in">len</span>(results),</span><br><span class="line">            <span class="string">&quot;results&quot;</span>: results</span><br><span class="line">        &#125;, f, ensure_ascii=<span class="literal">False</span>, indent=<span class="number">2</span>)</span><br><span class="line"></span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&quot;√ 搜索结果已保存至 <span class="subst">&#123;filename&#125;</span>&quot;</span>)  <span class="comment"># 提示信息同步修改</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 测试功能</span></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    keyword = <span class="string">&quot;李白&quot;</span></span><br><span class="line">    search_results = baidu_search(keyword, page_num=<span class="number">10</span>)  <span class="comment"># 爬取 10 页</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> search_results:</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">&quot;search success&quot;</span>)</span><br><span class="line">        save_results_to_file(search_results, keyword)</span><br><span class="line">    <span class="keyword">else</span>:</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">&quot;× 搜索结果获取失败，请检查网络或重试&quot;</span>)</span><br></pre></td></tr></table></figure>
+<h2 id="streamlit创建交互界面"><a href="#streamlit创建交互界面" class="headerlink" title="streamlit创建交互界面"></a>streamlit创建交互界面</h2><p>感觉streamlit创建的页面最好看，网上教程很多，我直接把我的放在下面</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> streamlit <span class="keyword">as</span> st</span><br><span class="line"><span class="keyword">from</span> ollama <span class="keyword">import</span> chat</span><br><span class="line"><span class="keyword">from</span> search <span class="keyword">import</span> baidu_search</span><br><span class="line"><span class="keyword">import</span> re</span><br><span class="line"></span><br><span class="line"><span class="comment"># 页面配置</span></span><br><span class="line">st.set_page_config(</span><br><span class="line">    page_title=<span class="string">&quot;DeepSeek Chat&quot;</span>,</span><br><span class="line">    page_icon=<span class="string">&quot;🤖&quot;</span>,</span><br><span class="line">    layout=<span class="string">&quot;wide&quot;</span>,</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 自定义 CSS 美化</span></span><br><span class="line">st.markdown(</span><br><span class="line">    <span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">    &lt;style&gt;</span></span><br><span class="line"><span class="string">    /* 背景、字体 */</span></span><br><span class="line"><span class="string">    body &#123;</span></span><br><span class="line"><span class="string">        /* 这里可以设置背景渐变色，例如 */</span></span><br><span class="line"><span class="string">        background: linear-gradient(to bottom right, #f7f7f7, #e6e6e6); </span></span><br><span class="line"><span class="string">        font-family: &#x27;Helvetica Neue&#x27;, Helvetica, Arial, sans-serif;</span></span><br><span class="line"><span class="string">    &#125;</span></span><br><span class="line"><span class="string">   .stApp &#123;</span></span><br><span class="line"><span class="string">        color: #333333;</span></span><br><span class="line"><span class="string">    &#125;</span></span><br><span class="line"><span class="string">    /* 聊天气泡 */</span></span><br><span class="line"><span class="string">   .user-bubble,.assistant-bubble &#123;</span></span><br><span class="line"><span class="string">        padding: 12px 16px;</span></span><br><span class="line"><span class="string">        border-radius: 16px;</span></span><br><span class="line"><span class="string">        margin: 8px 0;</span></span><br><span class="line"><span class="string">        max-width: 70%;</span></span><br><span class="line"><span class="string">        line-height: 1.4;</span></span><br><span class="line"><span class="string">        /* 添加阴影效果 */</span></span><br><span class="line"><span class="string">        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); </span></span><br><span class="line"><span class="string">    &#125;</span></span><br><span class="line"><span class="string">   .user-bubble &#123;</span></span><br><span class="line"><span class="string">        background-color: #FFEBE8;</span></span><br><span class="line"><span class="string">        color: #C0392B;</span></span><br><span class="line"><span class="string">        margin-left: auto;</span></span><br><span class="line"><span class="string">        /* 调整用户气泡文字样式 */</span></span><br><span class="line"><span class="string">        font-size: 16px; </span></span><br><span class="line"><span class="string">        font-weight: 500; </span></span><br><span class="line"><span class="string">    &#125;</span></span><br><span class="line"><span class="string">   .assistant-bubble &#123;</span></span><br><span class="line"><span class="string">        background-color: #E8F6FF;</span></span><br><span class="line"><span class="string">        color: #2471A3;</span></span><br><span class="line"><span class="string">        margin-right: auto;</span></span><br><span class="line"><span class="string">        /* 调整助手气泡文字样式 */</span></span><br><span class="line"><span class="string">        font-size: 16px; </span></span><br><span class="line"><span class="string">        font-weight: 500; </span></span><br><span class="line"><span class="string">    &#125;</span></span><br><span class="line"><span class="string">    /* 输入区 */</span></span><br><span class="line"><span class="string">   .stTextInput&gt;div&gt;div&gt;input &#123;</span></span><br><span class="line"><span class="string">        border: 2px solid #F39C12!important;</span></span><br><span class="line"><span class="string">        border-radius: 8px;</span></span><br><span class="line"><span class="string">    &#125;</span></span><br><span class="line"><span class="string">   .stButton&gt;button &#123;</span></span><br><span class="line"><span class="string">        background-color: #F39C12;</span></span><br><span class="line"><span class="string">        color: white;</span></span><br><span class="line"><span class="string">        border-radius: 8px;</span></span><br><span class="line"><span class="string">    &#125;</span></span><br><span class="line"><span class="string">    /* 侧边栏 */</span></span><br><span class="line"><span class="string">   .css-1d391kg &#123;</span></span><br><span class="line"><span class="string">        background-color: #FFF7E6;</span></span><br><span class="line"><span class="string">    &#125;</span></span><br><span class="line"><span class="string">   .sidebar.stText &#123;</span></span><br><span class="line"><span class="string">        font-size: 16px;</span></span><br><span class="line"><span class="string">    &#125;</span></span><br><span class="line"><span class="string">    &lt;/style&gt;</span></span><br><span class="line"><span class="string">    &quot;&quot;&quot;</span>,</span><br><span class="line">    unsafe_allow_html=<span class="literal">True</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 侧边栏</span></span><br><span class="line"><span class="keyword">with</span> st.sidebar:</span><br><span class="line">    st.title(<span class="string">&quot;🎈 设置&quot;</span>)</span><br><span class="line">    model = st.selectbox(</span><br><span class="line">        <span class="string">&quot;选择模型:&quot;</span>,</span><br><span class="line">        options=[<span class="string">&quot;deepseek-r1:1.5b&quot;</span>,<span class="string">&quot;deepseek-r1:7b&quot;</span>],</span><br><span class="line">        <span class="built_in">help</span>=<span class="string">&quot;选择你想使用的模型版本&quot;</span></span><br><span class="line">    )</span><br><span class="line">    st.markdown(<span class="string">&quot;---&quot;</span>)</span><br><span class="line">    st.markdown(<span class="string">&quot;**说明:** 这是一个可爱的聊天界面，用于与 DeepSeek 进行对话。&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 主界面标题</span></span><br><span class="line">st.title(<span class="string">&quot;🤗 欢迎来到 DeepSeek 聊天机器人&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 初始化消息历史</span></span><br><span class="line"><span class="keyword">if</span> <span class="string">&#x27;messages&#x27;</span> <span class="keyword">not</span> <span class="keyword">in</span> st.session_state:</span><br><span class="line">    st.session_state.messages = [</span><br><span class="line">        &#123;<span class="string">&quot;role&quot;</span>: <span class="string">&quot;assistant&quot;</span>, <span class="string">&quot;content&quot;</span>: <span class="string">&quot;Hello! 我是 DeepSeek 聊天机器人，有什么可以帮您？&quot;</span>&#125;</span><br><span class="line">    ]</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">clean_response</span>(<span class="params">raw_resp</span>):</span><br><span class="line">    <span class="comment"># 1. 先拿到纯文本</span></span><br><span class="line">    <span class="keyword">if</span> <span class="built_in">hasattr</span>(raw_resp, <span class="string">&quot;message&quot;</span>) <span class="keyword">and</span> <span class="built_in">hasattr</span>(raw_resp.message, <span class="string">&quot;content&quot;</span>):</span><br><span class="line">        <span class="comment"># Ollama/其他 SDK 风格</span></span><br><span class="line">        text = raw_resp.message.content</span><br><span class="line">    <span class="keyword">elif</span> <span class="built_in">hasattr</span>(raw_resp, <span class="string">&quot;content&quot;</span>):</span><br><span class="line">        <span class="comment"># 万一又是 .content</span></span><br><span class="line">        text = raw_resp.content</span><br><span class="line">    <span class="keyword">else</span>:</span><br><span class="line">        <span class="comment"># 兜底</span></span><br><span class="line">        text = <span class="built_in">str</span>(raw_resp)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># 2. 去掉 &lt;think&gt;…&lt;/think&gt; 块</span></span><br><span class="line">    text = re.sub(<span class="string">r&quot;&lt;think&gt;.*?&lt;/think&gt;\s*&quot;</span>, <span class="string">&quot;&quot;</span>, text, flags=re.S)</span><br><span class="line">    <span class="comment"># 3. 去掉开头自我介绍段落</span></span><br><span class="line">    text = re.sub(<span class="string">r&quot;^(你好！.*?提供更好的服务！\s*)&quot;</span>, <span class="string">&quot;&quot;</span>, text, flags=re.S)</span><br><span class="line">    <span class="keyword">return</span> text.strip()</span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> msg <span class="keyword">in</span> st.session_state.messages:</span><br><span class="line">    <span class="keyword">with</span> st.chat_message(msg[<span class="string">&quot;role&quot;</span>]):</span><br><span class="line">        st.markdown(msg[<span class="string">&quot;content&quot;</span>])</span><br><span class="line"></span><br><span class="line"><span class="comment"># 用户输入</span></span><br><span class="line"><span class="keyword">if</span> prompt := st.chat_input(<span class="string">&quot;有什么需要我帮助的吗？&quot;</span>):</span><br><span class="line">    <span class="comment"># 1. 展示并存储用户输入</span></span><br><span class="line">    <span class="keyword">with</span> st.chat_message(<span class="string">&quot;user&quot;</span>):</span><br><span class="line">        st.markdown(prompt)</span><br><span class="line">    st.session_state.messages.append(&#123;<span class="string">&quot;role&quot;</span>: <span class="string">&quot;user&quot;</span>, <span class="string">&quot;content&quot;</span>: prompt&#125;)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># 2. 在百度上检索</span></span><br><span class="line">    <span class="built_in">print</span>(prompt)</span><br><span class="line">    search_results = baidu_search(prompt, page_num=<span class="number">3</span>)</span><br><span class="line">    search_context = <span class="string">&quot;根据检索到的信息：\n&quot;</span></span><br><span class="line">    <span class="keyword">for</span> idx, item <span class="keyword">in</span> <span class="built_in">enumerate</span>(search_results, start=<span class="number">1</span>):</span><br><span class="line">        search_context += (</span><br><span class="line">            <span class="string">f&quot;<span class="subst">&#123;idx&#125;</span>. 标题：<span class="subst">&#123;item[<span class="string">&#x27;标题&#x27;</span>]&#125;</span>\n&quot;</span></span><br><span class="line">            <span class="string">f&quot;   摘要：<span class="subst">&#123;item[<span class="string">&#x27;摘要&#x27;</span>]&#125;</span>\n&quot;</span></span><br><span class="line">        )</span><br><span class="line"></span><br><span class="line">    <span class="comment"># 3. 把检索结果作为 system 消息插入到 user prompt 之前</span></span><br><span class="line">    insert_idx = <span class="built_in">len</span>(st.session_state.messages) - <span class="number">1</span></span><br><span class="line">    st.session_state.messages.insert(</span><br><span class="line">        insert_idx,</span><br><span class="line">        &#123;<span class="string">&quot;role&quot;</span>: <span class="string">&quot;system&quot;</span>, <span class="string">&quot;content&quot;</span>: search_context&#125;</span><br><span class="line">    )</span><br><span class="line"></span><br><span class="line">    <span class="comment"># 4. 准备防“think”和自我介绍”的 system 指令</span></span><br><span class="line">    system_msg = &#123;</span><br><span class="line">        <span class="string">&quot;role&quot;</span>: <span class="string">&quot;system&quot;</span>,</span><br><span class="line">        <span class="string">&quot;content&quot;</span>: (</span><br><span class="line">            <span class="string">&quot;你是一个直接回答问题的助手：\n&quot;</span></span><br><span class="line">            <span class="string">&quot;- 不要输出任何 `&lt;think&gt;` 标签或内部思考。\n&quot;</span></span><br><span class="line">            <span class="string">&quot;- 不要做自我介绍或额外寒暄。\n&quot;</span></span><br><span class="line">            <span class="string">&quot;只需给出简洁、准确的回答。&quot;</span></span><br><span class="line">        )</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment"># 5. 调用大模型，并清洗、展示结果</span></span><br><span class="line">    <span class="keyword">with</span> st.chat_message(<span class="string">&quot;assistant&quot;</span>):</span><br><span class="line">        raw_response = chat(</span><br><span class="line">            model,</span><br><span class="line">            messages=[system_msg] + st.session_state.messages</span><br><span class="line">        )</span><br><span class="line">        cleaned = clean_response(raw_response)</span><br><span class="line">        st.markdown(cleaned)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># 6. 把清洗后的回复存入历史</span></span><br><span class="line">    st.session_state.messages.append(&#123;</span><br><span class="line">        <span class="string">&quot;role&quot;</span>: <span class="string">&quot;assistant&quot;</span>,</span><br><span class="line">        <span class="string">&quot;content&quot;</span>: cleaned</span><br><span class="line">    &#125;)</span><br><span class="line"></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+
+
+
+
+    </div>
+
+    
+    
+    
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>WendyLuo
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://wendyluo1127.github.io/2025/05/09/%E6%9C%AC%E5%9C%B0%E9%83%A8%E7%BD%B2deepseek-%E7%99%BE%E5%BA%A6%E6%90%9C%E7%B4%A2/" title="本地部署deepseek+百度搜索">https://wendyluo1127.github.io/2025/05/09/本地部署deepseek-百度搜索/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/computer/" rel="tag"># computer</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2025/04/15/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%B0%8F%E7%99%BD%E5%85%A5%E9%97%A8%E6%8C%87%E5%8D%97%E2%80%94%E5%B7%A5%E5%85%B7%E8%B5%84%E6%BA%90%E7%AF%87/" rel="prev" title="计算机小白入门指南—工具资源篇">
+      <i class="fa fa-chevron-left"></i> 计算机小白入门指南—工具资源篇
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%AE%8C%E6%88%90%E6%9C%AC%E5%9C%B0%E9%83%A8%E7%BD%B2deepseek%E3%80%81%E8%81%94%E7%BD%91%E6%90%9C%E7%B4%A2%EF%BC%8C%E4%BB%A5%E5%8F%8A%E9%A1%B5%E9%9D%A2%E4%BA%A4%E4%BA%92%E5%8A%9F%E8%83%BD"><span class="nav-number">1.</span> <span class="nav-text">完成本地部署deepseek、联网搜索，以及页面交互功能</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Ollama%E9%83%A8%E7%BD%B2%E6%9C%AC%E5%9C%B0deepseek"><span class="nav-number">1.1.</span> <span class="nav-text">Ollama部署本地deepseek</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#requests%E5%92%8Cbeautifulsoup%E5%AE%9E%E7%8E%B0%E7%88%AC%E5%8F%96%E7%BD%91%E7%BB%9C%E6%A3%80%E7%B4%A2%E5%86%85%E5%AE%B9"><span class="nav-number">1.2.</span> <span class="nav-text">requests和beautifulsoup实现爬取网络检索内容</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#streamlit%E5%88%9B%E5%BB%BA%E4%BA%A4%E4%BA%92%E7%95%8C%E9%9D%A2"><span class="nav-number">1.3.</span> <span class="nav-text">streamlit创建交互界面</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="WendyLuo"
+      src="/images/my_avatar.jpg">
+  <p class="site-author-name" itemprop="name">WendyLuo</p>
+  <div class="site-description" itemprop="description">欢迎来到小菠萝的博客</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">4</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">2</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/WendyLuo1127" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;WendyLuo1127" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:wendyluo1127@stu.xmu.edu.cn" title="E-Mail → mailto:wendyluo1127@stu.xmu.edu.cn" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://weibo.com/yourname" title="Weibo → https:&#x2F;&#x2F;weibo.com&#x2F;yourname" rel="noopener" target="_blank"><i class="fab fa-weibo fa-fw"></i>Weibo</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://plus.google.com/wendyluo" title="Google → https:&#x2F;&#x2F;plus.google.com&#x2F;wendyluo" rel="noopener" target="_blank"><i class="fab fa-google fa-fw"></i>Google</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://twitter.com/yourname" title="Twitter → https:&#x2F;&#x2F;twitter.com&#x2F;yourname" rel="noopener" target="_blank"><i class="fab fa-twitter fa-fw"></i>Twitter</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://youtube.com/yourname" title="YouTube → https:&#x2F;&#x2F;youtube.com&#x2F;yourname" rel="noopener" target="_blank"><i class="fab fa-youtube fa-fw"></i>YouTube</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://instagram.com/yourname" title="Instagram → https:&#x2F;&#x2F;instagram.com&#x2F;yourname" rel="noopener" target="_blank"><i class="fab fa-instagram fa-fw"></i>Instagram</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 2025-04 – 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">WendyLuo</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-area"></i>
+    </span>
+    <span title="站点总字数">9k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">8 分钟</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
