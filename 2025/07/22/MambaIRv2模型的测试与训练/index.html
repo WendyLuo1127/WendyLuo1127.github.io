@@ -30,8 +30,9 @@
 <meta property="og:image" content="https://wendyluo1127.github.io/2025/07/22/MambaIRv2%E6%A8%A1%E5%9E%8B%E7%9A%84%E6%B5%8B%E8%AF%95%E4%B8%8E%E8%AE%AD%E7%BB%83/mambair2_pipline.png">
 <meta property="og:image" content="https://wendyluo1127.github.io/2025/07/22/MambaIRv2%E6%A8%A1%E5%9E%8B%E7%9A%84%E6%B5%8B%E8%AF%95%E4%B8%8E%E8%AE%AD%E7%BB%83/mambair_git_clone.png">
 <meta property="og:image" content="https://wendyluo1127.github.io/2025/07/22/MambaIRv2%E6%A8%A1%E5%9E%8B%E7%9A%84%E6%B5%8B%E8%AF%95%E4%B8%8E%E8%AE%AD%E7%BB%83/envs.png">
+<meta property="og:image" content="https://wendyluo1127.github.io/2025/07/22/MambaIRv2%E6%A8%A1%E5%9E%8B%E7%9A%84%E6%B5%8B%E8%AF%95%E4%B8%8E%E8%AE%AD%E7%BB%83/test.png">
 <meta property="article:published_time" content="2025-07-22T12:58:07.000Z">
-<meta property="article:modified_time" content="2025-07-23T09:51:59.703Z">
+<meta property="article:modified_time" content="2025-07-23T11:09:21.803Z">
 <meta property="article:author" content="WendyLuo">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:image" content="https://wendyluo1127.github.io/2025/07/22/MambaIRv2%E6%A8%A1%E5%9E%8B%E7%9A%84%E6%B5%8B%E8%AF%95%E4%B8%8E%E8%AE%AD%E7%BB%83/mambair2_pipline.png">
@@ -230,7 +231,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-07-23 17:51:59" itemprop="dateModified" datetime="2025-07-23T17:51:59+08:00">2025-07-23</time>
+                <time title="修改时间：2025-07-23 19:09:21" itemprop="dateModified" datetime="2025-07-23T19:09:21+08:00">2025-07-23</time>
               </span>
 
           
@@ -246,14 +247,14 @@
                 <i class="far fa-file-word"></i>
               </span>
                 <span class="post-meta-item-text">本文字数：</span>
-              <span>805</span>
+              <span>2k</span>
             </span>
             <span class="post-meta-item" title="阅读时长">
               <span class="post-meta-item-icon">
                 <i class="far fa-clock"></i>
               </span>
                 <span class="post-meta-item-text">阅读时长 &asymp;</span>
-              <span>1 分钟</span>
+              <span>2 分钟</span>
             </span>
 
         </div>
@@ -277,18 +278,31 @@
 </ol>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">git <span class="built_in">clone</span> https://github.com/csguoh/MambaIR.git</span><br></pre></td></tr></table></figure>
 <img src="/2025/07/22/MambaIRv2%E6%A8%A1%E5%9E%8B%E7%9A%84%E6%B5%8B%E8%AF%95%E4%B8%8E%E8%AE%AD%E7%BB%83/mambair_git_clone.png" class="" title="MambaIRv2克隆">
-<ol>
+<ol start="3">
 <li>准备环境</li>
 </ol>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">cd</span> MambaIR</span><br><span class="line">conda <span class="built_in">env</span> create -f environment.yaml</span><br><span class="line">conda activate mambair</span><br></pre></td></tr></table></figure>
 <img src="/2025/07/22/MambaIRv2%E6%A8%A1%E5%9E%8B%E7%9A%84%E6%B5%8B%E8%AF%95%E4%B8%8E%E8%AE%AD%E7%BB%83/envs.png" class="" title="MambaIRv2环境配置">
 <p>这一步需要很久<br>环境安装一般不会一帆风顺，但是求助AI大概率可以解决</p>
-<ol>
+<ul>
+<li>常见会出现packaging不见啊，requirements装不了之类的错误，解决办法是在env内pip好packaging，再用命令把requirements分成conda包和pip包分别安装</li>
+</ul>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">pip install packaging</span><br><span class="line"></span><br><span class="line">grep -v &quot;pypi_0&quot; requirements.txt | awk -F= &#x27;&#123;print $1&quot;=&quot;$2&#125;&#x27; &gt; conda_requirements.txt</span><br><span class="line">grep &quot;pypi_0&quot; requirements.txt | awk -F= &#x27;&#123;print $1&quot;==&quot;$2&#125;&#x27; &gt; pip_requirements.txt</span><br><span class="line"># 先用 conda 安装</span><br><span class="line">conda install --file conda_requirements.txt</span><br><span class="line"></span><br><span class="line"># 再用 pip 安装</span><br><span class="line">pip install --no-build-isolation -r pip_requirements.txt</span><br></pre></td></tr></table></figure>
+<ul>
+<li>mamba-ssm 编译失败<br>包的具体版本要查看自己当前的环境配置</li>
+</ul>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">wget https://github.com/state-spaces/mamba/releases/download/v1.0.1/mamba_ssm-1.0.1+cu118torch2.0cxx11abiTRUE-cp38-cp38-linux_x86_64.whl</span><br><span class="line">pip install mamba_ssm-1.0.1+cu118torch2.0cxx11abiTRUE-cp38-cp38-linux_x86_64.whl</span><br><span class="line"></span><br><span class="line">wget https://github.com/Dao-AILab/causal-conv1d/releases/download/v1.4.0/causal_conv1d-1.4.0+cu118torch2.0cxx11abiTRUE-cp38-cp38-linux_x86_64.whl</span><br><span class="line">pip install causal_conv1d-1.4.0+cu118torch2.0cxx11abiTRUE-cp38-cp38-linux_x86_64.whl</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<ol start="4">
 <li>准备数据集<br>我只测试SR，那么就只需要下载SR的数据并保存到对应路径下<br>数据在 <a target="_blank" rel="noopener" href="https://github.com/csguoh/MambaIR.git">https://github.com/csguoh/MambaIR.git</a> 上有，下载好压缩包并放到datasets文件下，解压  </li>
 <li>准备模型权重文件（未训练直接测试）<br>在 <a target="_blank" rel="noopener" href="https://github.com/csguoh/MambaIR/releases">https://github.com/csguoh/MambaIR/releases</a> 下寻找合适的权重文件，放到experiments下的pretrained里，也可以通过命令：</li>
 </ol>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">wegt https://github.com/csguoh/MambaIR/releases/&lt;file name&gt;</span><br></pre></td></tr></table></figure>
-
+<ol start="6">
+<li>修改测试文件<br>在&#x2F;MambaIR&#x2F;experiments&#x2F;pretrained_models下，选择自己想选的文件，打开，并将测试集数据路径和文件路径都改成自己的，（注意要从根目录开始）</li>
+<li>运行test</li>
+</ol>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"># 根据自己的选择更改命令</span><br><span class="line">python basicsr/test.py -opt options/test/mambairv2/test_MambaIRv2_SRSmall_x4.yml</span><br></pre></td></tr></table></figure>
+<img src="/2025/07/22/MambaIRv2%E6%A8%A1%E5%9E%8B%E7%9A%84%E6%B5%8B%E8%AF%95%E4%B8%8E%E8%AE%AD%E7%BB%83/test.png" class="" title="MambaIRv2测试">
     </div>
 
     
@@ -485,12 +499,12 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-area"></i>
     </span>
-    <span title="站点总字数">14k</span>
+    <span title="站点总字数">15k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="站点阅读时长">12 分钟</span>
+    <span title="站点阅读时长">13 分钟</span>
 </div>
   <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
   </div>
